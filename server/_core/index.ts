@@ -2,8 +2,15 @@ import "dotenv/config";
 import { config } from "dotenv";
 import { resolve } from "path";
 
-// Load .env.local if it exists
-config({ path: resolve(process.cwd(), ".env.local") });
+// Load .env.local when running locally (development) so local env vars work.
+// In production the environment variables should be provided by the host.
+if (process.env.NODE_ENV !== "production") {
+  try {
+    config({ path: resolve(process.cwd(), ".env.local") });
+  } catch (err) {
+    // If .env.local doesn't exist, that's fine in production/CI environments.
+  }
+}
 
 import express from "express";
 import { createServer } from "http";

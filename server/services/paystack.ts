@@ -48,13 +48,13 @@ export async function initializePayment(
     // Use default callback URL if not provided
     const callback = callbackUrl || `http://localhost:3000/payment/callback`;
 
+    // Log only non-sensitive details to avoid leaking secret key material
     console.log("[Paystack] Initializing payment:", {
       email,
       amount: amount * 100,
       reference,
       callback_url: callback,
       hasSecretKey: !!secretKey,
-      secretKeyPrefix: secretKey.substring(0, 8) + "...",
     });
 
     const response = await fetch("https://api.paystack.co/transaction/initialize", {

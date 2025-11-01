@@ -2,8 +2,11 @@ import "dotenv/config";
 import { config } from "dotenv";
 import { resolve } from "path";
 
-// Load .env.local FIRST before exporting ENV
-config({ path: resolve(process.cwd(), ".env.local") });
+// Load .env.local FIRST before exporting ENV, but only when not in production.
+// In production, environment variables should be supplied by the platform.
+if (process.env.NODE_ENV !== "production") {
+  config({ path: resolve(process.cwd(), ".env.local") });
+}
 
 export const ENV = {
   appId: process.env.VITE_APP_ID ?? "",
@@ -27,9 +30,8 @@ export const ENV = {
 };
 
 // Debug logging for Paystack configuration
+// Only reveal presence of keys in logs. Never print key material or long prefixes.
 console.log("[ENV] Paystack configuration loaded:", {
   hasPublicKey: !!ENV.paystackPublicKey,
   hasSecretKey: !!ENV.paystackSecretKey,
-  publicKeyPrefix: ENV.paystackPublicKey ? ENV.paystackPublicKey.substring(0, 8) + "..." : "NOT SET",
-  secretKeyPrefix: ENV.paystackSecretKey ? ENV.paystackSecretKey.substring(0, 8) + "..." : "NOT SET",
 });
