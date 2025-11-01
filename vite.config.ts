@@ -24,6 +24,22 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    // Reduce large chunk warnings by splitting vendor code into smaller chunks.
+    // Manual chunking here is basic and can be tuned to your app's needs.
+    chunkSizeWarningLimit: 600, // KB - lower to surface large bundles during dev
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) return 'vendor-react';
+            if (id.includes('lucide-react')) return 'vendor-icons';
+            if (id.includes('cloudinary')) return 'vendor-cloudinary';
+            // Group other node_modules into a generic vendor chunk
+            return 'vendor';
+          }
+        },
+      },
+    },
   },
   server: {
     host: true,
