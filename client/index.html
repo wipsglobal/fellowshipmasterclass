@@ -8,6 +8,7 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1" />
     <link rel="icon" type="image/png" href="/ibakm-logo.png" />
     <link rel="apple-touch-icon" href="/ibakm-logo.png" />
+    <title>%VITE_APP_TITLE%</title>
     <!-- Add Google Fonts here, example:
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -18,22 +19,10 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <title>%VITE_APP_TITLE%</title>
-      <!-- Load analytics only when endpoint is provided. Use an inline module to avoid
-           Vite trying to bundle the external script (and to prevent the "must be
-           type=\"module\"" bundling warning). This will also gracefully do
-           nothing when no analytics endpoint is configured. -->
-      <script type="module">
-        const endpoint = import.meta.env.VITE_ANALYTICS_ENDPOINT || '';
-        const siteId = import.meta.env.VITE_ANALYTICS_WEBSITE_ID || '';
-        if (endpoint) {
-          const s = document.createElement('script');
-          s.defer = true;
-          s.src = `${endpoint.replace(/\/+$/, '')}/umami`;
-          if (siteId) s.setAttribute('data-website-id', siteId);
-          document.head.appendChild(s);
-        }
-      </script>
+    <script
+      defer
+      src="%VITE_ANALYTICS_ENDPOINT%/umami"
+      data-website-id="%VITE_ANALYTICS_WEBSITE_ID%"></script>
   </body>
 
 </html>

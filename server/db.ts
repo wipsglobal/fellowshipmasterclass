@@ -592,24 +592,25 @@ export async function initializeDefaultFees() {
       try {
         const hashedPassword = await bcrypt.hash("Admin@123", 10);
         
-          if (process.env.NODE_ENV !== "production") {
-            await db.insert(users).values({
-              name: "Admin",
-              email: adminEmail,
-              password: hashedPassword,
-              loginMethod: "email",
-              role: "admin",
-              lastSignedIn: new Date(),
-            });
-          
-            console.log("[Database] ✓ Admin user created successfully!");
-            console.log("   📧 Email: admin@fellowship.com");
-            console.log("   🔑 Password: Admin@123");
-            console.log("   ⚠️  IMPORTANT: Change this password after first login!");
-          } else {
-            // In production avoid printing credentials or sensitive setup details
-            console.log("[Database] ✓ Admin user created (production): credentials suppressed in logs");
-          }
+        await db.insert(users).values({
+          name: "Admin",
+          email: adminEmail,
+          password: hashedPassword,
+          loginMethod: "email",
+          role: "admin",
+          lastSignedIn: new Date(),
+        });
+        
+        console.log("[Database] ✓ Admin user created successfully!");
+        if (!ENV.isProduction) {
+          // During development it's helpful to see the default credentials,
+          // but never print passwords or secrets in production logs.
+          console.log("   📧 Email: admin@fellowship.com");
+          console.log("   🔑 Password: Admin@123");
+          console.log("   ⚠️  IMPORTANT: Change this password after first login!");
+        } else {
+          console.log("   Admin account created (production). Do not log credentials in production.");
+        }
       } catch (error) {
         console.error("[Database] Failed to create admin user:", error);
       }

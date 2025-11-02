@@ -2,19 +2,13 @@ import "dotenv/config";
 import { config } from "dotenv";
 import { resolve } from "path";
 
-// Load .env.local when running locally (development) so local env vars work.
-// In production the environment variables should be provided by the host.
-if (process.env.NODE_ENV !== "production") {
-  try {
-    config({ path: resolve(process.cwd(), ".env.local") });
-  } catch (err) {
-    // If .env.local doesn't exist, that's fine in production/CI environments.
-  }
-}
+// Load .env.local if it exists
+config({ path: resolve(process.cwd(), ".env.local") });
 
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import dns from "dns";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
@@ -42,12 +36,30 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
-  // Initialize default fees before starting server with error handling
-  try {
-    await initializeDefaultFees();
-  } catch (error) {
-    console.error("[Server] Failed to initialize default fees:", error);
-    console.log("[Server] Continuing server startup anyway...");
+  // Initialize default fees before starting server with error handling.
+  // If DATABASE_URL is not configured, skip DB initialization to avoid crashing
+  // during deployments where the DB is configured via platform env vars.
+  if (!process.env.DATABASE_URL) {
+    console.warn("[Server] DATABASE_URL not set — skipping database initialization (initializeDefaultFees)");
+  } else {
+    // Before attempting DB initialization, verify the DB hostname resolves.
+    try {
+      const dbUrl = new URL(process.env.DATABASE_URL);
+      const hostname = dbUrl.hostname;
+      // Try DNS lookup with a short timeout.
+      const lookupPromise = dns.promises.lookup(hostname);
+      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("DNS lookup timeout")), 3000));
+      await Promise.race([lookupPromise, timeout]);
+    } catch (err) {
+      console.warn(`[Server] Database host DNS lookup failed or timed out (${err?.message}). Skipping database initialization.`);
+      // Continue startup without DB initialization
+    }
+    try {
+      await initializeDefaultFees();
+    } catch (error) {
+      console.error("[Server] Failed to initialize default fees:", error);
+      console.log("[Server] Continuing server startup anyway...");
+    }
   }
   
   const app = express();

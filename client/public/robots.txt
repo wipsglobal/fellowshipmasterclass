@@ -1,0 +1,8 @@
+# robots.txt for the Fellowship Masterclass site
+# Allow all crawlers by default. Replace the sitemap URL with your production site URL.
+
+User-agent: *
+Disallow:
+
+# Sitemap for crawlers — update the domain to your production URL (no trailing slash)
+Sitemap: https://example.com/sitemap.xml

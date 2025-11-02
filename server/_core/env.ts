@@ -1,11 +1,16 @@
-import "dotenv/config";
-import { config } from "dotenv";
 import { resolve } from "path";
+import { config } from "dotenv";
 
-// Load .env.local FIRST before exporting ENV, but only when not in production.
-// In production, environment variables should be supplied by the platform.
+// Only load local .env file when not in production. In production the host
+// (e.g., Vercel) should provide environment variables and we must avoid
+// accidentally loading developer .env files.
 if (process.env.NODE_ENV !== "production") {
-  config({ path: resolve(process.cwd(), ".env.local") });
+  // Load local env for development only. In production, use platform envs.
+  try {
+    config({ path: resolve(process.cwd(), ".env.local") });
+  } catch (err) {
+    // ignore if dotenv not available or .env.local missing
+  }
 }
 
 export const ENV = {
@@ -29,9 +34,12 @@ export const ENV = {
   emailFrom: process.env.EMAIL_FROM ?? "fellowshipmastercertificates@ibakmglobal.com",
 };
 
-// Debug logging for Paystack configuration
-// Only reveal presence of keys in logs. Never print key material or long prefixes.
-console.log("[ENV] Paystack configuration loaded:", {
-  hasPublicKey: !!ENV.paystackPublicKey,
-  hasSecretKey: !!ENV.paystackSecretKey,
-});
+// In non-production environments we log whether payment keys are present so
+// developers can notice a missing configuration. Never print key material or
+// prefixes in logs.
+if (!ENV.isProduction) {
+  console.log("[ENV] Paystack configuration loaded:", {
+    hasPublicKey: !!ENV.paystackPublicKey,
+    hasSecretKey: !!ENV.paystackSecretKey,
+  });
+}
