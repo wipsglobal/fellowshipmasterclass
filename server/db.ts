@@ -1,7 +1,7 @@
 import { eq, and, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import {
   InsertUser,
   users,

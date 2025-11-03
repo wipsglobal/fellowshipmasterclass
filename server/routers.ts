@@ -339,7 +339,19 @@ export const appRouter = router({
 
     // Get user's applications
     myApplications: protectedProcedure.query(async ({ ctx }) => {
-      return getUserApplications(ctx.user.id);
+      const apps = await getUserApplications(ctx.user.id);
+      // Attach current fee configuration for each application's cohort so the UI
+      // can display the latest fee (even if the stored applicationFee is stale).
+      return await Promise.all(
+        apps.map(async (a) => {
+          try {
+            const fee = a.cohortId ? await getFeeConfiguration(a.cohortId) : null;
+            return { ...a, currentFeeConfig: fee };
+          } catch (e) {
+            return { ...a, currentFeeConfig: null };
+          }
+        })
+      );
     }),
 
     // Get single application
@@ -362,7 +374,12 @@ export const appRouter = router({
           });
         }
 
-        return app;
+        try {
+          const fee = app.cohortId ? await getFeeConfiguration(app.cohortId) : null;
+          return { ...app, currentFeeConfig: fee };
+        } catch (e) {
+          return { ...app, currentFeeConfig: null };
+        }
       }),
 
     // Update application (only draft status)
@@ -876,6 +893,17 @@ export const appRouter = router({
 
         const amount = parseFloat(feeConfig.amount);
         const reference = `APP-${app.applicationNumber}-${Date.now()}`;
+
+        // Ensure the application's stored fee reflects the latest cohort fee so
+        // that UI and records match what the applicant will be charged.
+        // This updates draft applications (or applications awaiting payment)
+        // to the current fee at the time the payment is initiated.
+        try {
+          await updateApplication(app.id, { applicationFee: feeConfig.amount });
+        } catch (updateErr) {
+          console.warn("[Payments] Failed to update application fee on initiate:", updateErr);
+          // Not fatal — proceed with payment using the current fee.
+        }
 
         try {
           // Initialize Paystack payment
